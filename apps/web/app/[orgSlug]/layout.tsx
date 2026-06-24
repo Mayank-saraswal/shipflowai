@@ -8,8 +8,10 @@ export default async function DashboardLayout({
   params,
 }: {
   children: ReactNode;
-  params: { orgSlug: string };
+  params: Promise<{ orgSlug: string }>;
 }) {
+  const p = await params;
+  
   // Validate that the user is authed and in an organization.
   // We can fetch user orgs here if we want to show an Org Switcher as well.
   
@@ -18,7 +20,7 @@ export default async function DashboardLayout({
       {/* Global Nav */}
       <nav className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border/40 bg-background px-6">
         <div className="flex items-center gap-4">
-          <Link href={`/${params.orgSlug}/workspaces`} className="flex items-center gap-2 transition-opacity hover:opacity-80">
+          <Link href={`/${p.orgSlug}/workspaces`} className="flex items-center gap-2 transition-opacity hover:opacity-80">
             <div className="h-5 w-5 rounded bg-primary" />
             <span className="font-semibold tracking-tight">ShipFlow</span>
           </Link>

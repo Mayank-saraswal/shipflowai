@@ -14,6 +14,8 @@ import {
   featureStatusEnum,
   prdStatusEnum,
   taskStatusEnum,
+  clarificationSessionStatusEnum,
+  messageRoleEnum,
 } from "./enums";
 import { usersTable } from "./user";
 import { organizationsTable, projectsTable, uuidv7Primary } from "./core";
@@ -31,6 +33,8 @@ export const featureRequestsTable = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
     status: featureStatusEnum("status").notNull().default("open"),
+    duplicateOfFeatureRequestId: uuid("duplicate_of_feature_request_id"),
+    duplicateDecision: varchar("duplicate_decision", { length: 50 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
     createdBy: text("created_by"),
@@ -43,6 +47,58 @@ export const featureRequestsTable = pgTable(
     projectIndex: index("feature_project_idx").on(
       table.organizationId,
       table.projectId
+    ),
+  })
+);
+
+export const featureClarificationSessionsTable = pgTable(
+  "feature_clarification_sessions",
+  {
+    id: uuidv7Primary("id"),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    featureRequestId: uuid("feature_request_id")
+      .notNull()
+      .references(() => featureRequestsTable.id, { onDelete: "cascade" }),
+    status: clarificationSessionStatusEnum("status").notNull().default("active"),
+    roundCount: integer("round_count").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    orgCreatedIndex: index("clarification_session_org_created_idx").on(
+      table.organizationId,
+      table.createdAt
+    ),
+    featureRequestIndex: index("clarification_session_feature_idx").on(
+      table.featureRequestId
+    ),
+  })
+);
+
+export const featureClarificationMessagesTable = pgTable(
+  "feature_clarification_messages",
+  {
+    id: uuidv7Primary("id"),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => featureClarificationSessionsTable.id, { onDelete: "cascade" }),
+    role: messageRoleEnum("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgCreatedIndex: index("clarification_message_org_created_idx").on(
+      table.organizationId,
+      table.createdAt
+    ),
+    sessionIndex: index("clarification_message_session_idx").on(
+      table.sessionId,
+      table.createdAt
     ),
   })
 );

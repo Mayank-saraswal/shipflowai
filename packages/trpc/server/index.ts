@@ -6,6 +6,7 @@ import { organizationRouter } from "./routes/organization/route";
 import { workspaceRouter } from "./routes/workspace/route";
 import { projectRouter } from "./routes/project/route";
 import { repositoryRouter } from "./routes/repository/route";
+import { featureRouter } from "./routes/feature/route";
 
 export const serverRouter = router({
   health: healthRouter,
@@ -14,6 +15,7 @@ export const serverRouter = router({
   workspace: workspaceRouter,
   project: projectRouter,
   repository: repositoryRouter,
+  feature: featureRouter,
 });
 
 export { createContext } from "./context";

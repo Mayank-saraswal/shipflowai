@@ -10,6 +10,7 @@
 export const EVENTS = {
   // Feature Request lifecycle
   FEATURE_CREATED: "feature.created",
+  FEATURE_CLARIFICATION_REQUESTED: "feature.clarification.requested",
   FEATURE_CLARIFYING: "feature.clarifying",
   FEATURE_CONTEXT_READY: "feature.context_ready",
   FEATURE_APPROVED: "feature.approved",
@@ -51,6 +52,19 @@ export interface FeatureCreatedPayload {
   title: string;
   description: string;
   createdBy: string;
+}
+
+export interface FeatureClarificationRequestedPayload {
+  organizationId: string;
+  featureRequestId: string;
+  sessionId: string;
+}
+
+export interface FeatureContextReadyPayload {
+  organizationId: string;
+  featureRequestId: string;
+  sessionId: string;
+  summary: string;
 }
 
 export interface PRDGeneratePayload {
@@ -112,19 +126,21 @@ export interface GithubWebhookReceivedPayload {
   action?: string;
   installationId?: number;
   deliveryId: string;
-  payload: any;
+  payload: Record<string, unknown>;
 }
 
 // ─── Unified Event Map ───────────────────────────────────────
-export interface ShipFlowEventMap {
-  [EVENTS.FEATURE_CREATED]: FeatureCreatedPayload;
-  [EVENTS.PRD_GENERATE]: PRDGeneratePayload;
-  [EVENTS.PRD_APPROVED]: PRDApprovedPayload;
-  [EVENTS.TASKS_GENERATE]: TasksGeneratePayload;
-  [EVENTS.PR_RECEIVED]: PRReceivedPayload;
-  [EVENTS.AI_REVIEW_START]: AIReviewStartPayload;
-  [EVENTS.AI_REVIEW_COMPLETED]: AIReviewCompletedPayload;
-  [EVENTS.FEATURE_APPROVED]: FeatureApprovedPayload;
-  [EVENTS.WEB_RESEARCH_REQUESTED]: WebResearchPayload;
-  [EVENTS.GITHUB_WEBHOOK_RECEIVED]: GithubWebhookReceivedPayload;
+export interface ShipFlowEventMap extends Record<string, { data: any }> {
+  [EVENTS.FEATURE_CREATED]: { data: FeatureCreatedPayload };
+  [EVENTS.FEATURE_CLARIFICATION_REQUESTED]: { data: FeatureClarificationRequestedPayload };
+  [EVENTS.FEATURE_CONTEXT_READY]: { data: FeatureContextReadyPayload };
+  [EVENTS.PRD_GENERATE]: { data: PRDGeneratePayload };
+  [EVENTS.PRD_APPROVED]: { data: PRDApprovedPayload };
+  [EVENTS.TASKS_GENERATE]: { data: TasksGeneratePayload };
+  [EVENTS.PR_RECEIVED]: { data: PRReceivedPayload };
+  [EVENTS.AI_REVIEW_START]: { data: AIReviewStartPayload };
+  [EVENTS.AI_REVIEW_COMPLETED]: { data: AIReviewCompletedPayload };
+  [EVENTS.FEATURE_APPROVED]: { data: FeatureApprovedPayload };
+  [EVENTS.WEB_RESEARCH_REQUESTED]: { data: WebResearchPayload };
+  [EVENTS.GITHUB_WEBHOOK_RECEIVED]: { data: GithubWebhookReceivedPayload };
 }

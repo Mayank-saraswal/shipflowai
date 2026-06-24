@@ -12,14 +12,14 @@
  * so events are fully type-safe from producer to consumer.
  */
 
-import { Inngest } from "inngest";
+import { Inngest, EventSchemas } from "inngest";
 import type { ShipFlowEventMap } from "@repo/events";
 
 // ─── Typed Inngest Client ────────────────────────────────────
 
 export const inngest = new Inngest({
   id: "shipflow-ai",
-  schemas: new Map<string, { data: ShipFlowEventMap[keyof ShipFlowEventMap] }>(),
+  schemas: new EventSchemas().fromRecord<ShipFlowEventMap>(),
 });
 
 // ─── Re-export for consumers ─────────────────────────────────

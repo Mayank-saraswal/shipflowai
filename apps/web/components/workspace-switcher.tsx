@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "~/trpc/react";
+import { trpc as api } from "~/trpc/client";
 import { useRouter, useParams } from "next/navigation";
 
 export function WorkspaceSwitcher() {
@@ -15,7 +15,7 @@ export function WorkspaceSwitcher() {
     return <div className="h-9 w-48 animate-pulse rounded-md bg-muted"></div>;
   }
 
-  const currentWorkspace = workspaces?.items.find((w) => w.slug === workspaceSlug);
+  const currentWorkspace = workspaces?.items.find((w: { slug: string; name: string }) => w.slug === workspaceSlug);
 
   return (
     <div className="relative">
@@ -33,7 +33,7 @@ export function WorkspaceSwitcher() {
       {isOpen && (
         <div className="absolute left-0 mt-2 w-56 rounded-md border border-border bg-background shadow-lg z-50">
           <div className="py-1">
-            {workspaces?.items.map((ws) => (
+            {workspaces?.items.map((ws: { id: string; name: string; slug: string }) => (
               <button
                 key={ws.id}
                 onClick={() => {

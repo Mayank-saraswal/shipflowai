@@ -1,6 +1,6 @@
 "use client";
 
-import { api } from "~/trpc/react";
+import { trpc as api } from "~/trpc/client";
 import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 

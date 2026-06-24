@@ -24,7 +24,7 @@ export async function createContext({ req, res }: CreateExpressContextOptions) {
     res,
     user: sessionData?.user ?? null,
     session: sessionData?.session ?? null,
-    organizationId: sessionData?.session?.activeOrganizationId ?? null,
+    organizationId: (sessionData?.session as any)?.activeOrganizationId ?? null,
   };
 }
 

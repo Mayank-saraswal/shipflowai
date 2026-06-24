@@ -47,8 +47,8 @@ export const projectRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can create projects." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can create projects." });
       }
 
       // Verify workspace belongs to organization
@@ -82,6 +82,8 @@ export const projectRouter = router({
           description: input.description,
         }).returning();
 
+        if (!project) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create project." });
+
         await tx.insert(auditLogsTable).values({
           organizationId: ctx.organizationId,
           action: "project.created",
@@ -105,8 +107,8 @@ export const projectRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can update projects." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can update projects." });
       }
 
       const project = await db.query.projectsTable.findFirst({
@@ -130,6 +132,10 @@ export const projectRouter = router({
           .where(eq(projectsTable.id, input.id))
           .returning();
 
+        if (!updated) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update project." });
+        }
+
         await tx.insert(auditLogsTable).values({
           organizationId: ctx.organizationId,
           action: "project.updated",
@@ -148,8 +154,8 @@ export const projectRouter = router({
       id: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can delete projects." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can delete projects." });
       }
 
       const project = await db.query.projectsTable.findFirst({

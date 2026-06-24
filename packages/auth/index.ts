@@ -89,7 +89,7 @@ export const auth = betterAuth({
   },
   
   advanced: {
-    generateId: () => crypto.randomUUID(), // Standard UUIDs for BetterAuth defaults
+    // Generate UUIDs handled by database level usually.
   }
 });
 

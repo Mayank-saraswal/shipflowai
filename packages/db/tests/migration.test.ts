@@ -72,9 +72,9 @@ async function runTests() {
     let updateFailed = false;
     try {
       await db.update(schema.auditLogsTable).set({ action: "hacked.action" }).where(sql`id = ${log.id}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       updateFailed = true;
-      if (!e.message.includes("append-only")) throw e;
+      if (e instanceof Error && !e.message.includes("append-only")) throw e;
     }
     assert(updateFailed, "AuditLog update should have failed due to append-only trigger");
 
@@ -100,9 +100,9 @@ async function runTests() {
     let prdUpdateFailed = false;
     try {
       await db.update(schema.prdsTable).set({ title: "V2" }).where(sql`id = ${prd.id}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       prdUpdateFailed = true;
-      if (!e.message.includes("immutable")) throw e;
+      if (e instanceof Error && !e.message.includes("immutable")) throw e;
     }
     assert(prdUpdateFailed, "PRD core fields update should have failed due to immutability trigger");
 

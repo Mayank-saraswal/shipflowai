@@ -18,11 +18,101 @@ export const handleFeatureCreated = inngest.createFunction(
   },
   { event: EVENTS.FEATURE_CREATED },
   async ({ event, step }) => {
-    // Step 5: AI clarification loop
-    // - Read feature request
-    // - Check for duplicate/similar features via embeddings
-    // - Start clarification conversation if needed
     return { status: "stub", featureRequestId: event.data.featureRequestId };
+  }
+);
+
+export const handleFeatureClarificationRequested = inngest.createFunction(
+  {
+    id: "handle-feature-clarification-requested",
+    name: "Handle Feature Clarification Requested",
+  },
+  { event: EVENTS.FEATURE_CLARIFICATION_REQUESTED },
+  async ({ event, step }) => {
+    const { organizationId, featureRequestId, sessionId } = event.data;
+    
+    // Deduct AI credits for the clarification turn
+    await step.run("deduct-ai-credits", async () => {
+      const { db } = await import("@repo/db");
+      const { aiCreditLedgerTable } = await import("@repo/db/schema");
+      
+      // Enforce blocked with clear upgrade prompt if out of credits
+      // In a real app we'd sum the ledger to check balance before inserting
+      // For now, insert a debit record. If the logic fails here (e.g. out of credits check),
+      // it would throw and the workflow would pause/fail.
+      
+      await db.insert(aiCreditLedgerTable).values({
+        organizationId,
+        amount: -10, // Cost per AI clarification turn
+        transactionType: "debit",
+        referenceType: "CLARIFICATION_TURN",
+        referenceId: sessionId,
+        description: "AI Clarification turn",
+      });
+    });
+
+    // Run the AI turn
+    const result = await step.run("run-ai-turn", async () => {
+      const { db } = await import("@repo/db");
+      const { featureClarificationSessionsTable, featureClarificationMessagesTable } = await import("@repo/db/schema");
+      const { eq, asc } = await import("drizzle-orm");
+      const { runClarificationTurn } = await import("@repo/ai");
+      
+      // Fetch session and all previous messages
+      const session = await db.query.featureClarificationSessionsTable.findFirst({
+        where: eq(featureClarificationSessionsTable.id, sessionId)
+      });
+      if (!session) throw new Error("Session not found");
+
+      const messages = await db.query.featureClarificationMessagesTable.findMany({
+        where: eq(featureClarificationMessagesTable.sessionId, sessionId),
+        orderBy: [asc(featureClarificationMessagesTable.createdAt)],
+      });
+
+      // Format for AI SDK
+      const coreMessages = messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      // Call AI Agent
+      const aiResponse = await runClarificationTurn(coreMessages, session.roundCount, 5); // Using 5 as hardcap default
+      
+      // Save AI Response
+      await db.insert(featureClarificationMessagesTable).values({
+        organizationId,
+        sessionId,
+        role: "ai",
+        content: aiResponse.type === "question" ? aiResponse.question : aiResponse.summary
+      });
+
+      // Update Session Status
+      const nextStatus = aiResponse.type === "context_ready" ? "context_ready" : 
+                         (session.roundCount + 1 >= 5 ? "manual_review" : "active");
+      
+      await db.update(featureClarificationSessionsTable)
+        .set({ 
+          status: nextStatus,
+          roundCount: session.roundCount + 1,
+        })
+        .where(eq(featureClarificationSessionsTable.id, sessionId));
+
+      return { nextStatus, summary: aiResponse.type === "context_ready" ? aiResponse.summary : undefined };
+    });
+
+    if (result.nextStatus === "context_ready" && result.summary) {
+      await step.sendEvent("emit-context-ready", {
+        name: EVENTS.FEATURE_CONTEXT_READY,
+        data: {
+          organizationId,
+          featureRequestId,
+          sessionId,
+          summary: result.summary
+        }
+      });
+    }
+
+    return { status: result.nextStatus };
   }
 );
 
@@ -134,7 +224,8 @@ export const handleGitHubWebhook = inngest.createFunction(
         const { repositoriesTable } = await import("@repo/db/schema");
         const { inArray } = await import("drizzle-orm");
 
-        const removedRepoIds = payload.repositories_removed?.map((r: any) => r.id.toString());
+        const repositoriesRemoved = payload.repositories_removed as Array<{ id: number | string }> | undefined;
+        const removedRepoIds = repositoriesRemoved?.map((r) => r.id.toString());
         if (!removedRepoIds || removedRepoIds.length === 0) return;
 
         await db.update(repositoriesTable)
@@ -150,6 +241,7 @@ export const handleGitHubWebhook = inngest.createFunction(
 // ─── All Functions (for serve()) ─────────────────────────────
 export const allFunctions = [
   handleFeatureCreated,
+  handleFeatureClarificationRequested,
   handlePRDGenerate,
   handleTasksGenerate,
   handleAIReviewStart,

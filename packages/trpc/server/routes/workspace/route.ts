@@ -44,8 +44,8 @@ export const workspaceRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can create workspaces." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can create workspaces." });
       }
 
       const existing = await db.query.workspacesTable.findFirst({
@@ -65,6 +65,8 @@ export const workspaceRouter = router({
           slug: input.slug,
           description: input.description,
         }).returning();
+
+        if (!workspace) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create workspace." });
 
         await tx.insert(auditLogsTable).values({
           organizationId: ctx.organizationId,
@@ -89,8 +91,8 @@ export const workspaceRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can update workspaces." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can update workspaces." });
       }
 
       const workspace = await db.query.workspacesTable.findFirst({
@@ -114,6 +116,10 @@ export const workspaceRouter = router({
           .where(eq(workspacesTable.id, input.id))
           .returning();
 
+        if (!updated) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update workspace." });
+        }
+
         await tx.insert(auditLogsTable).values({
           organizationId: ctx.organizationId,
           action: "workspace.updated",
@@ -132,8 +138,8 @@ export const workspaceRouter = router({
       id: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can delete workspaces." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can delete workspaces." });
       }
 
       const workspace = await db.query.workspacesTable.findFirst({

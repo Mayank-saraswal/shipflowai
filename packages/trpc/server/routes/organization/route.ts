@@ -34,10 +34,12 @@ export const organizationRouter = router({
           slug: input.slug,
         }).returning();
 
+        if (!newOrg) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create organization." });
+
         await tx.insert(membershipsTable).values({
           organizationId: newOrg.id,
           userId: ctx.user.id,
-          role: "owner",
+          role: "admin",
           scopeType: "organization",
           scopeId: newOrg.id,
         });
@@ -56,10 +58,10 @@ export const organizationRouter = router({
   inviteUser: organizationProcedure
     .input(z.object({
       email: z.string().email(),
-      role: z.enum(["owner", "admin", "member"]),
+      role: z.enum(["admin", "member", "viewer"]),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
+      if (ctx.role !== "admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Not allowed to invite" });
       }
 
@@ -132,7 +134,7 @@ export const organizationRouter = router({
       inviteId: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
+      if (ctx.role !== "admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Not allowed to revoke" });
       }
 
@@ -154,8 +156,8 @@ export const organizationRouter = router({
       userId: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners can remove members" });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can remove members" });
       }
       if (ctx.user.id === input.userId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Use leaveOrganization to remove yourself" });
@@ -179,19 +181,19 @@ export const organizationRouter = router({
 
   leaveOrganization: organizationProcedure
     .mutation(async ({ ctx }) => {
-      // Prevent leaving if this is the only owner
-      if (ctx.role === "owner") {
-        const ownerCount = await db.query.membershipsTable.findMany({
+      // Prevent leaving if this is the only admin
+      if (ctx.role === "admin") {
+        const adminCount = await db.query.membershipsTable.findMany({
           where: and(
             eq(membershipsTable.organizationId, ctx.organizationId),
-            eq(membershipsTable.role, "owner")
+            eq(membershipsTable.role, "admin")
           )
         });
 
-        if (ownerCount.length <= 1) {
+        if (adminCount.length <= 1) {
           throw new TRPCError({ 
             code: "BAD_REQUEST", 
-            message: "Cannot leave the organization as you are the only owner. Transfer ownership or delete the organization." 
+            message: "Cannot leave the organization as you are the only admin. Transfer admin rights or delete the organization." 
           });
         }
       }

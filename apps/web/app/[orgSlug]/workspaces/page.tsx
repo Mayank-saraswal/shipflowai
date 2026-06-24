@@ -1,6 +1,6 @@
 "use client";
 
-import { api } from "~/trpc/react";
+import { trpc as api } from "~/trpc/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
@@ -53,7 +53,7 @@ export default function WorkspacesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((ws) => (
+          {items.map((ws: { id: string; slug: string; name: string; description?: string | null }) => (
             <Link key={ws.id} href={`/${orgSlug}/${ws.slug}/projects`} className="group block">
               <div className="flex h-full flex-col justify-between rounded-lg border border-border bg-card p-6 shadow-sm transition-all hover:border-primary/50 hover:shadow-md">
                 <div>

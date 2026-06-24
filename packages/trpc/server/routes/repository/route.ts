@@ -47,8 +47,8 @@ export const repositoryRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can connect repositories." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can connect repositories." });
       }
 
       // Verify project belongs to organization
@@ -90,6 +90,10 @@ export const repositoryRouter = router({
             set: { isActive: true, projectId: input.projectId, name: input.name },
           }).returning();
 
+          if (!repo) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to connect repository." });
+          }
+
           await tx.insert(auditLogsTable).values({
             organizationId: ctx.organizationId,
             action: "repository.connected",
@@ -101,8 +105,8 @@ export const repositoryRouter = router({
 
           return repo;
         });
-      } catch (e: any) {
-        if (e.code === '23505') { // Postgres unique_violation
+      } catch (e: unknown) {
+        if (e && typeof e === 'object' && 'code' in e && e.code === '23505') { // Postgres unique_violation
           throw new TRPCError({ code: "CONFLICT", message: "Repository is already connected to an organization." });
         }
         throw e;
@@ -114,8 +118,8 @@ export const repositoryRouter = router({
       id: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.role !== "owner" && ctx.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners and admins can disconnect repositories." });
+      if (ctx.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can disconnect repositories." });
       }
 
       const repo = await db.query.repositoriesTable.findFirst({

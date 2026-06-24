@@ -23,8 +23,8 @@ test("Multi-Tenant Auth & Isolation Tests", async (t) => {
 
   await t.test("create organization atomically sets membership and session active org", async () => {
     const caller = organizationRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
+      req: {} as unknown as Request,
+      res: {} as unknown as Response,
       user: user1,
       session: session1,
       organizationId: null, // Initial state, no active org
@@ -38,7 +38,7 @@ test("Multi-Tenant Auth & Isolation Tests", async (t) => {
       where: eq(membershipsTable.organizationId, org.id)
     });
     assert.strictEqual(membership?.userId, user1.id);
-    assert.strictEqual(membership?.role, "owner");
+    assert.strictEqual(membership?.role, "admin");
 
     // Verify active organization is set in session
     const updatedSession = await db.query.sessionsTable.findFirst({
@@ -55,13 +55,13 @@ test("Multi-Tenant Auth & Isolation Tests", async (t) => {
     
     // Create caller as the owner
     const ownerCaller = organizationRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
+      req: {} as unknown as Request,
+      res: {} as unknown as Response,
       user: user1,
       session: updatedSession!,
       organizationId: updatedSession!.activeOrganizationId!,
-      role: "owner"
-    } as any);
+      role: "admin"
+    });
 
     const invite = await ownerCaller.inviteUser({ email: "test2@example.com", role: "member" });
     assert.strictEqual(invite.status, "pending");
@@ -81,8 +81,8 @@ test("Multi-Tenant Auth & Isolation Tests", async (t) => {
     }).returning().then(r => r[0]);
 
     const inviteeCaller = organizationRouter.createCaller({
-      req: {} as any,
-      res: {} as any,
+      req: {} as unknown as Request,
+      res: {} as unknown as Response,
       user: user2,
       session: session2,
       organizationId: null,
@@ -97,8 +97,12 @@ test("Multi-Tenant Auth & Isolation Tests", async (t) => {
     try {
       await inviteeCaller.acceptInvite({ token: invite.token });
       assert.fail("Should have thrown error");
-    } catch (err: any) {
-      assert.strictEqual(err.message, "Invite already consumed or revoked");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        assert.strictEqual(err.message, "Invite already consumed or revoked");
+      } else {
+        assert.fail("Expected Error object");
+      }
     }
   });
 

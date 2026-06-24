@@ -51,6 +51,17 @@ export function getFastModel(config?: ModelConfig) {
   return getModel({ ...config, modelId: config?.modelId ?? "gpt-4o-mini" });
 }
 
+/**
+ * Returns a configured embedding model (locked to a specific model to maintain vector space consistency).
+ */
+export function getEmbeddingModel() {
+  const openai = createOpenAI({
+    apiKey: process.env.OPENAI_API_KEY ?? "",
+  });
+  return openai.embedding("text-embedding-3-small");
+}
+
 // ─── Re-exports ──────────────────────────────────────────────
-export { generateText, streamText, generateObject } from "ai";
+export { generateText, streamText, generateObject, embed, embedMany } from "ai";
 export type { LanguageModel, CoreMessage } from "ai";
+export * from "./agents/clarification";

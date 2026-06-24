@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   
   // Use fetch to check session securely over internal network
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-  let sessionData: any = null;
+  let sessionData: { session?: { activeOrganizationId?: string | null } } | null = null;
   
   try {
     const res = await fetch(`${apiUrl}/auth/get-session`, {
