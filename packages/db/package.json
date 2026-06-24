@@ -1,9 +1,10 @@
 {
-  "name": "@repo/database",
+  "name": "@repo/db",
   "version": "1.0.0",
   "scripts": {
     "db:migrate": "dotenv -- drizzle-kit migrate",
     "db:generate": "dotenv -- drizzle-kit generate",
+    "db:studio": "dotenv -- drizzle-kit studio",
     "dev": "dotenv -- drizzle-kit studio"
   },
   "devDependencies": {

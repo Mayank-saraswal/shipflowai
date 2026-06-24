@@ -1,5 +1,5 @@
 {
-  "name": "@repo/api",
+  "name": "@shipflow/api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -21,12 +21,16 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@repo/auth": "workspace:*",
     "@repo/trpc": "workspace:*",
+    "@repo/inngest": "workspace:*",
     "@repo/logger": "workspace:*",
     "@scalar/express-api-reference": "^0.8.30",
     "@trpc/server": "^11.8.1",
+    "better-auth": "^1.2.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "inngest": "^3.35.0",
     "trpc-to-openapi": "^3.1.0",
     "zod": "^4.3.5"
   }

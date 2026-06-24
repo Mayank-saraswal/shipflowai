@@ -13,8 +13,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Streamyst",
-  description: "Media Forwarding",
+  title: "ShipFlow AI — Ship Features Faster",
+  description:
+    "AI-powered feature lifecycle management. From request to production with intelligent PRD generation, task breakdown, and code review.",
 };
 
 export default function RootLayout({

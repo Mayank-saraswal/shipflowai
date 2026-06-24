@@ -1,11 +1,12 @@
 {
-  "name": "trpc-monorepo",
+  "name": "shipflow-ai",
   "private": true,
   "scripts": {
     "build": "dotenv -- turbo build",
     "dev": "dotenv -- turbo dev",
     "db:generate": "dotenv -- turbo db:generate",
     "db:migrate": "dotenv -- turbo db:migrate",
+    "db:studio": "dotenv -- turbo db:studio",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
@@ -15,7 +16,7 @@
     "turbo": "^2.7.2",
     "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.18.0",
   "engines": {
     "node": ">=18"
   },

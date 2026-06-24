@@ -1,0 +1,19 @@
+{
+  "name": "@repo/inngest",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./functions": "./functions/index.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@repo/events": "workspace:*",
+    "inngest": "^3.35.0"
+  }
+}

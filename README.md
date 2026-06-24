@@ -1,135 +1,81 @@
-# Turborepo starter
+# ShipFlow AI
 
-This Turborepo starter is maintained by the Turborepo core team.
+> AI-powered feature lifecycle management — from customer request to production.
 
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
-```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Architecture
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+apps/
+  web/          → Next.js frontend (dashboard, PRD editor, kanban, billing)
+  api/          → Express + tRPC backend (business logic, auth, webhooks)
+packages/
+  db/           → Drizzle schema + migrations (PostgreSQL + pgvector)
+  trpc/         → Shared tRPC router definitions + client types
+  auth/         → BetterAuth configuration (org plugin, session middleware)
+  events/       → Shared event/type contracts (Inngest events, status enums)
+  ai/           → Vercel AI SDK wrappers (model factory, agent stubs)
+  mem0/         → Mem0 Cloud client (AI context memory)
+  github/       → Octokit client + webhook verification
+  inngest/      → Background workflow function definitions
+  ui/           → Shared Shadcn-based component library
+  services/     → Business logic layer
+  logger/       → Winston logger
+  eslint-config/     → ESLint configuration
+  typescript-config/ → TypeScript configuration
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Getting Started
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+### Prerequisites
+- Node.js >= 18
+- pnpm 9+
+- Docker (for local Postgres, Redis, Inngest)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### Setup
 
-### Develop
+```bash
+# 1. Install dependencies
+pnpm install
 
-To develop all apps and packages, run the following command:
+# 2. Copy environment variables
+cp .env.example .env
+# Fill in your secrets (see .env.example for docs)
 
-```
-cd my-turborepo
+# 3. Start infrastructure
+docker-compose up -d
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+# 4. Run database migrations
+pnpm db:migrate
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# 5. Start development servers
+pnpm dev
 ```
 
-### Remote Caching
+### Services (dev)
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| API | http://localhost:8000 |
+| API Docs | http://localhost:8000/docs |
+| Auth | http://localhost:8000/api/auth |
+| Inngest Dashboard | http://localhost:8288 |
+| Drizzle Studio | `pnpm db:studio` |
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## Tech Stack
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+| Layer | Choice |
+|-------|--------|
+| Frontend | Next.js + Shadcn UI |
+| Backend | Express + tRPC |
+| Monorepo | pnpm + Turborepo |
+| Database | PostgreSQL + Drizzle ORM + pgvector |
+| Auth | BetterAuth (with organization plugin) |
+| AI Memory | Mem0 Cloud |
+| AI SDK | Vercel AI SDK |
+| Async Workflows | Self-hosted Inngest |
+| GitHub | Octokit + Webhooks |
+| Cache | Redis (Upstash in prod) |
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+## License
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Proprietary — ShipFlow AI
