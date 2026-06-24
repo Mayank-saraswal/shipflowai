@@ -36,6 +36,9 @@ export const EVENTS = {
   // Web Research
   WEB_RESEARCH_REQUESTED: "webresearch.requested",
   WEB_RESEARCH_COMPLETED: "webresearch.completed",
+
+  // GitHub Webhooks
+  GITHUB_WEBHOOK_RECEIVED: "github.webhook.received",
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
@@ -104,6 +107,14 @@ export interface WebResearchPayload {
   query: string;
 }
 
+export interface GithubWebhookReceivedPayload {
+  event: string;
+  action?: string;
+  installationId?: number;
+  deliveryId: string;
+  payload: any;
+}
+
 // ─── Unified Event Map ───────────────────────────────────────
 export interface ShipFlowEventMap {
   [EVENTS.FEATURE_CREATED]: FeatureCreatedPayload;
@@ -115,4 +126,5 @@ export interface ShipFlowEventMap {
   [EVENTS.AI_REVIEW_COMPLETED]: AIReviewCompletedPayload;
   [EVENTS.FEATURE_APPROVED]: FeatureApprovedPayload;
   [EVENTS.WEB_RESEARCH_REQUESTED]: WebResearchPayload;
+  [EVENTS.GITHUB_WEBHOOK_RECEIVED]: GithubWebhookReceivedPayload;
 }

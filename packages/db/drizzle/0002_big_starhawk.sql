@@ -1,0 +1,1 @@
+ALTER TABLE "repositories" ADD COLUMN "github_installation_id" varchar(255);

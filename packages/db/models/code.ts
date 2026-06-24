@@ -1,5 +1,6 @@
 import {
   pgTable,
+  boolean,
   uuid,
   varchar,
   timestamp,
@@ -7,11 +8,12 @@ import {
   index,
   uniqueIndex,
   check,
+  
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { pullRequestStatusEnum, reviewStatusEnum } from "./enums";
 import { usersTable } from "./user";
-import { organizationsTable, uuidv7Primary } from "./core";
+import { organizationsTable, uuidv7Primary, projectsTable } from "./core";
 import { prdsTable } from "./product";
 
 export const repositoriesTable = pgTable(
@@ -21,8 +23,13 @@ export const repositoriesTable = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projectsTable.id, { onDelete: "cascade" }),
     githubRepoId: varchar("github_repo_id", { length: 255 }).notNull(),
+    githubInstallationId: varchar("github_installation_id", { length: 255 }),
     name: varchar("name", { length: 255 }).notNull(),
+    isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
   },

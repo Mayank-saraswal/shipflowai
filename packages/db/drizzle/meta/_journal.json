@@ -8,6 +8,20 @@
       "when": 1782279133094,
       "tag": "0000_cute_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782280789386,
+      "tag": "0001_loving_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782280994743,
+      "tag": "0002_big_starhawk",
+      "breakpoints": true
     }
   ]
 }

@@ -36,6 +36,8 @@ export const workspacesTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).notNull(),
+    description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
     deactivatedAt: timestamp("deactivated_at"), // soft delete
@@ -44,6 +46,14 @@ export const workspacesTable = pgTable(
     orgCreatedIndex: index("workspace_org_created_idx").on(
       table.organizationId,
       table.createdAt
+    ),
+    orgNameUnique: uniqueIndex("workspace_org_name_unique_idx").on(
+      table.organizationId,
+      table.name
+    ),
+    orgSlugUnique: uniqueIndex("workspace_org_slug_unique_idx").on(
+      table.organizationId,
+      table.slug
     ),
   })
 );
@@ -59,6 +69,8 @@ export const projectsTable = pgTable(
       .notNull()
       .references(() => workspacesTable.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).notNull(),
+    description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
     deactivatedAt: timestamp("deactivated_at"), // soft delete
@@ -72,6 +84,32 @@ export const projectsTable = pgTable(
       table.organizationId,
       table.workspaceId
     ),
+    workspaceNameUnique: uniqueIndex("project_workspace_name_unique_idx").on(
+      table.workspaceId,
+      table.name
+    ),
+    workspaceSlugUnique: uniqueIndex("project_workspace_slug_unique_idx").on(
+      table.workspaceId,
+      table.slug
+    ),
+  })
+);
+
+export const githubInstallationsTable = pgTable(
+  "github_installations",
+  {
+    id: varchar("installation_id", { length: 255 }).primaryKey(),
+    githubAccountLogin: varchar("github_account_login", { length: 255 }).notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 50 }).notNull().default("active"),
+    connectedByUserId: text("connected_by_user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    orgIndex: index("github_installation_org_idx").on(table.organizationId),
   })
 );
 

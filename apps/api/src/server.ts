@@ -13,6 +13,8 @@ import { inngest } from "@repo/inngest";
 import { allFunctions } from "@repo/inngest/functions";
 
 import { env } from "./env";
+import express from "express";
+import { githubWebhookRouter } from "./routes/webhooks/github";
 
 export const app = express();
 
@@ -31,6 +33,13 @@ if (env.NODE_ENV !== "prod") {
     }),
   );
 }
+
+// ─── Webhooks ────────────────────────────────────────────────
+app.use(
+  "/api/webhooks/github",
+  express.raw({ type: "application/json" }),
+  githubWebhookRouter
+);
 
 app.use(express.json());
 

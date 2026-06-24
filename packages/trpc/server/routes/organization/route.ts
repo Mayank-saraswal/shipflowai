@@ -147,5 +147,67 @@ export const organizationRouter = router({
         );
 
       return { success: true };
+    }),
+
+  removeMember: organizationProcedure
+    .input(z.object({
+      userId: z.string()
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.role !== "owner") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only owners can remove members" });
+      }
+      if (ctx.user.id === input.userId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Use leaveOrganization to remove yourself" });
+      }
+
+      const targetMembership = await db.query.membershipsTable.findFirst({
+        where: and(
+          eq(membershipsTable.organizationId, ctx.organizationId),
+          eq(membershipsTable.userId, input.userId)
+        )
+      });
+
+      if (!targetMembership) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Membership not found" });
+      }
+
+      await db.delete(membershipsTable).where(eq(membershipsTable.id, targetMembership.id));
+
+      return { success: true };
+    }),
+
+  leaveOrganization: organizationProcedure
+    .mutation(async ({ ctx }) => {
+      // Prevent leaving if this is the only owner
+      if (ctx.role === "owner") {
+        const ownerCount = await db.query.membershipsTable.findMany({
+          where: and(
+            eq(membershipsTable.organizationId, ctx.organizationId),
+            eq(membershipsTable.role, "owner")
+          )
+        });
+
+        if (ownerCount.length <= 1) {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "Cannot leave the organization as you are the only owner. Transfer ownership or delete the organization." 
+          });
+        }
+      }
+
+      await db.delete(membershipsTable).where(
+        and(
+          eq(membershipsTable.organizationId, ctx.organizationId),
+          eq(membershipsTable.userId, ctx.user.id)
+        )
+      );
+
+      // Clear active organization session
+      await db.update(sessionsTable)
+        .set({ activeOrganizationId: null })
+        .where(eq(sessionsTable.id, ctx.session.id));
+
+      return { success: true };
     })
 });
