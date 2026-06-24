@@ -3,18 +3,10 @@ import { organization } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@repo/db";
 
-/**
- * ShipFlow AI — BetterAuth server instance
- *
- * Mounted on the Express API server at `/api/auth/*`.
- * Uses the organization plugin to enforce the forced-org onboarding flow.
- *
- * Key design decisions:
- * - Organization plugin is enabled so every user can belong to an org
- * - Email/password + GitHub OAuth as social providers
- * - Drizzle adapter connects to the same Postgres used by the rest of the app
- * - trustedOrigins allows the Next.js frontend to make cross-origin auth calls
- */
+// Use native crypto randomUUID for uuidv7-like generation, or rely on Drizzle defaults.
+// BetterAuth defaults to standard length strings for IDs. We'll use Drizzle defaults for our own models
+// but BetterAuth will generate IDs via its own mechanism for internal tables.
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -22,6 +14,31 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+
+  emailVerification: {
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      // Send via Resend
+      if (!process.env.RESEND_API_KEY) {
+        console.log("Mock Email (No RESEND_API_KEY): Verification URL:", url);
+        return;
+      }
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "onboarding@hedwigs.site",
+          to: user.email,
+          subject: "Verify your email address",
+          html: `<p>Click <a href="${url}">here</a> to verify your email.</p>`,
+        }),
+      });
+    },
   },
 
   socialProviders: {
@@ -35,9 +52,45 @@ export const auth = betterAuth({
 
   plugins: [
     organization({
-      allowUserToCreateOrganization: true,
+      schema: {
+        organization: {
+          modelName: "organizations",
+        },
+        member: {
+          modelName: "memberships",
+          fields: {
+            role: "role",
+            userId: "userId",
+            organizationId: "organizationId",
+            createdAt: "createdAt",
+          }
+        },
+        invitation: {
+          modelName: "invites",
+          fields: {
+            organizationId: "organizationId",
+            inviterId: "inviterId",
+            email: "email",
+            role: "role",
+            status: "status",
+            expiresAt: "expiresAt",
+          }
+        },
+      },
+      allowUserToCreateOrganization: false, // We will manually handle this to ensure strict atomicity
     }),
   ],
+
+  // Rate Limiting Config
+  rateLimit: {
+    enabled: true,
+    // Provide an Upstash Redis fallback implementation
+    storage: "memory", // Let BetterAuth handle rate limits via its internal mechanism or custom DB storage
+  },
+  
+  advanced: {
+    generateId: () => crypto.randomUUID(), // Standard UUIDs for BetterAuth defaults
+  }
 });
 
 export type Auth = typeof auth;

@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { pullRequestStatusEnum, reviewStatusEnum } from "./enums";
+import { usersTable } from "./user";
 import { organizationsTable, uuidv7Primary } from "./core";
 import { prdsTable } from "./product";
 
@@ -52,7 +53,7 @@ export const pullRequestsTable = pgTable(
     status: pullRequestStatusEnum("status").notNull().default("open"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-    createdBy: uuid("created_by"), // Could link to a user mapping
+    createdBy: text("created_by"), // Could link to a user mapping
   },
   (table) => ({
     orgCreatedIndex: index("pr_org_created_idx").on(
@@ -77,7 +78,7 @@ export const reviewsTable = pgTable(
     content: text("content"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
   },
   (table) => ({
     orgCreatedIndex: index("review_org_created_idx").on(
@@ -104,7 +105,7 @@ export const reviewIssuesTable = pgTable(
     severity: varchar("severity", { length: 50 }).notNull(),
     explanation: text("explanation").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
     // No updatedAt because this is an append-only log of the issue creation
   },
   (table) => ({
@@ -128,7 +129,7 @@ export const reviewIssueEventsTable = pgTable(
     eventType: varchar("event_type", { length: 50 }).notNull(), // e.g., 'resolved', 'not_an_issue', 'reopened'
     comment: text("comment"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
     // Append-only
   },
   (table) => ({
@@ -155,7 +156,7 @@ export const approvalsTable = pgTable(
     ),
     comment: text("comment"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
   },
   (table) => ({
     orgCreatedIndex: index("approval_org_created_idx").on(

@@ -7,6 +7,7 @@ import {
   index,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { usersTable } from "./user";
 import { organizationsTable, uuidv7Primary } from "./core";
 import { sql } from "drizzle-orm";
 
@@ -35,7 +36,7 @@ export const auditLogsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
     action: varchar("action", { length: 255 }).notNull(), // e.g., 'user.invited', 'prd.approved'
-    actorId: uuid("actor_id"), // User who performed the action
+    actorId: text("actor_id"), // User who performed the action
     targetType: varchar("target_type", { length: 100 }), // e.g., 'invite', 'prd'
     targetId: uuid("target_id"),
     metadata: jsonb("metadata"), // Additional context

@@ -3,6 +3,7 @@ import {
   uuid,
   varchar,
   timestamp,
+  text,
   integer,
   boolean,
   index,
@@ -10,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { roleEnum } from "./enums";
+import { usersTable } from "./user";
 
 // Helper for native PG18 UUIDv7
 export const uuidv7Primary = (name: string) =>
@@ -80,7 +82,9 @@ export const membershipsTable = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").notNull(), // Assuming user table is elsewhere or generic
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
     role: roleEnum("role").notNull().default("member"),
     scopeType: varchar("scope_type", { length: 50 }).notNull(), // 'organization' or 'project'
     scopeId: uuid("scope_id").notNull(),
@@ -108,6 +112,8 @@ export const invitesTable = pgTable(
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
     email: varchar("email", { length: 255 }).notNull(),
     role: roleEnum("role").notNull().default("member"),
+    status: varchar("status", { length: 50 }).notNull().default("pending"),
+    inviterId: text("inviter_id").references(() => usersTable.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
     expiresAt: timestamp("expires_at").notNull(),
     consumedAt: timestamp("consumed_at"),
@@ -156,7 +162,8 @@ export const aiCreditLedgerTable = pgTable(
     referenceId: uuid("reference_id"),
     description: varchar("description", { length: 255 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by")
+      .references(() => usersTable.id, { onDelete: "set null" }),
   },
   (table) => ({
     orgCreatedIndex: index("ledger_org_created_idx").on(

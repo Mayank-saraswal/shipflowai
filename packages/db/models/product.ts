@@ -15,6 +15,7 @@ import {
   prdStatusEnum,
   taskStatusEnum,
 } from "./enums";
+import { usersTable } from "./user";
 import { organizationsTable, projectsTable, uuidv7Primary } from "./core";
 
 export const featureRequestsTable = pgTable(
@@ -32,7 +33,7 @@ export const featureRequestsTable = pgTable(
     status: featureStatusEnum("status").notNull().default("open"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
   },
   (table) => ({
     orgCreatedIndex: index("feature_org_created_idx").on(
@@ -66,7 +67,7 @@ export const prdsTable = pgTable(
     content: text("content").notNull(),
     status: prdStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    createdBy: uuid("created_by"),
+    createdBy: text("created_by"),
     // No updatedAt since PRDs are immutable
   },
   (table) => ({
@@ -100,8 +101,8 @@ export const tasksTable = pgTable(
     status: taskStatusEnum("status").notNull().default("todo"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
-    createdBy: uuid("created_by"),
-    assignedTo: uuid("assigned_to"),
+    createdBy: text("created_by"),
+    assignedTo: text("assigned_to"),
   },
   (table) => ({
     orgCreatedIndex: index("task_org_created_idx").on(

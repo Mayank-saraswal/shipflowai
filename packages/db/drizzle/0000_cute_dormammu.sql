@@ -13,7 +13,7 @@ CREATE TABLE "ai_credit_ledger" (
 	"reference_id" uuid,
 	"description" varchar(255),
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "invites" (
@@ -21,6 +21,8 @@ CREATE TABLE "invites" (
 	"organization_id" uuid NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"role" "role" DEFAULT 'member' NOT NULL,
+	"status" varchar(50) DEFAULT 'pending' NOT NULL,
+	"inviter_id" text,
 	"token" varchar(255) NOT NULL,
 	"expires_at" timestamp NOT NULL,
 	"consumed_at" timestamp,
@@ -32,7 +34,7 @@ CREATE TABLE "invites" (
 CREATE TABLE "memberships" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" text NOT NULL,
 	"role" "role" DEFAULT 'member' NOT NULL,
 	"scope_type" varchar(50) NOT NULL,
 	"scope_id" uuid NOT NULL,
@@ -89,7 +91,7 @@ CREATE TABLE "feature_requests" (
 	"status" "feature_status" DEFAULT 'open' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "prds" (
@@ -103,7 +105,7 @@ CREATE TABLE "prds" (
 	"content" text NOT NULL,
 	"status" "prd_status" DEFAULT 'draft' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" uuid,
+	"created_by" text,
 	CONSTRAINT "prd_version_check" CHECK ("prds"."version" >= 1)
 );
 --> statement-breakpoint
@@ -117,8 +119,8 @@ CREATE TABLE "tasks" (
 	"status" "task_status" DEFAULT 'todo' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp,
-	"created_by" uuid,
-	"assigned_to" uuid
+	"created_by" text,
+	"assigned_to" text
 );
 --> statement-breakpoint
 CREATE TABLE "approvals" (
@@ -128,7 +130,7 @@ CREATE TABLE "approvals" (
 	"pull_request_id" uuid,
 	"comment" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" uuid,
+	"created_by" text,
 	CONSTRAINT "approval_exactly_one_target_check" CHECK ((("approvals"."prd_id" IS NOT NULL AND "approvals"."pull_request_id" IS NULL) OR ("approvals"."prd_id" IS NULL AND "approvals"."pull_request_id" IS NOT NULL)))
 );
 --> statement-breakpoint
@@ -141,7 +143,7 @@ CREATE TABLE "pull_requests" (
 	"status" "pr_status" DEFAULT 'open' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "repositories" (
@@ -160,7 +162,7 @@ CREATE TABLE "review_issue_events" (
 	"event_type" varchar(50) NOT NULL,
 	"comment" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "review_issues" (
@@ -170,7 +172,7 @@ CREATE TABLE "review_issues" (
 	"severity" varchar(50) NOT NULL,
 	"explanation" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "reviews" (
@@ -181,14 +183,14 @@ CREATE TABLE "reviews" (
 	"content" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"organization_id" uuid NOT NULL,
 	"action" varchar(255) NOT NULL,
-	"actor_id" uuid,
+	"actor_id" text,
 	"target_type" varchar(100),
 	"target_id" uuid,
 	"metadata" jsonb,
@@ -205,9 +207,61 @@ CREATE TABLE "embeddings" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp,
+	"refresh_token_expires_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	"active_organization_id" text,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "ai_credit_ledger" ADD CONSTRAINT "ai_credit_ledger_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ai_credit_ledger" ADD CONSTRAINT "ai_credit_ledger_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invites" ADD CONSTRAINT "invites_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invites" ADD CONSTRAINT "invites_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -234,6 +288,8 @@ ALTER TABLE "reviews" ADD CONSTRAINT "reviews_organization_id_organizations_id_f
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_pull_request_id_pull_requests_id_fk" FOREIGN KEY ("pull_request_id") REFERENCES "public"."pull_requests"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "embeddings" ADD CONSTRAINT "embeddings_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "ledger_org_created_idx" ON "ai_credit_ledger" USING btree ("organization_id","created_at");--> statement-breakpoint
 CREATE INDEX "invite_org_created_idx" ON "invites" USING btree ("organization_id","created_at");--> statement-breakpoint
 CREATE INDEX "membership_org_created_idx" ON "memberships" USING btree ("organization_id","created_at");--> statement-breakpoint
