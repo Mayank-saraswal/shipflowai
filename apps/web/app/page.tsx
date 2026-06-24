@@ -3,7 +3,13 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 
 export default async function Home() {
-  const { status } = await api.health.getHealth.query();
+  let status = "unknown";
+  try {
+    const res = await api.health.getHealth.query();
+    status = res.status;
+  } catch (e) {
+    status = "offline (build-time)";
+  }
   return (
     <div className="flex min-h-screen flex-col bg-background selection:bg-primary selection:text-primary-foreground font-sans">
       {/* Sticky Nav Bar */}
