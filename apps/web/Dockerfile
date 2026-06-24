@@ -10,7 +10,7 @@ WORKDIR /app
 RUN npm install -g pnpm turbo
 
 COPY . .
-RUN turbo prune web --docker
+RUN turbo prune @shipflow/web --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
@@ -28,7 +28,7 @@ RUN pnpm install
 # Build the project
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
-RUN pnpm turbo run build --filter=web...
+RUN pnpm turbo run build --filter=@shipflow/web...
 
 # Production image, copy all the files and run next
 FROM base AS runner
